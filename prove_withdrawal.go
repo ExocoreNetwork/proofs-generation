@@ -59,11 +59,11 @@ func IsProvableWithdrawal(latestOracleBeaconSlot, withdrawalSlot uint64) bool {
 	return latestOracleBeaconSlot > beacon.SlotsPerHistoricalRoot+withdrawalSlot
 }
 
-func (epp *EigenPodProofs) GetWithdrawalProofParams(latestOracleBeaconSlot, withdrawalSlot uint64) (uint64, error) {
+func (epp *EigenPodProofs) GetWithdrawalProofParams(latestOracleBeaconSlot, withdrawalSlot uint64) (uint64, uint64, uint64, error) {
 	if withdrawalSlot > latestOracleBeaconSlot {
-		return 0, errors.New("withdrawal slot is after than the latest oracle beacon slot")
+		return 0, 0, 0, errors.New("withdrawal slot is after than the latest oracle beacon slot")
 	} else if latestOracleBeaconSlot-withdrawalSlot < beacon.SlotsPerHistoricalRoot {
-		return 0, errors.New("oracle beacon slot does not have enough historical summaries to prove withdrawal")
+		return 0, 0, 0, errors.New("oracle beacon slot does not have enough historical summaries to prove withdrawal")
 	}
 
 	var FIRST_CAPELLA_SLOT uint64
@@ -75,12 +75,14 @@ func (epp *EigenPodProofs) GetWithdrawalProofParams(latestOracleBeaconSlot, with
 		FIRST_CAPELLA_SLOT = FIRST_CAPELLA_SLOT_HOLESKY
 	}
 	// index of the historical summary in the array of historical_summaries
-	historicalSummaryIndex := (withdrawalSlot - FIRST_CAPELLA_SLOT) / beacon.SlotsPerHistoricalRoot
+	targetBlockRootsGroupSummaryIndex := (withdrawalSlot - FIRST_CAPELLA_SLOT) / beacon.SlotsPerHistoricalRoot
+
+	withdrawalBlockRootIndexInGroup := withdrawalSlot % beacon.SlotsPerHistoricalRoot
 
 	// slot of which the beacon state is retrieved for getting the block roots array containing the old block with the old withdrawal
-	historicalSummarySlot := FIRST_CAPELLA_SLOT + (historicalSummaryIndex+1)*beacon.SlotsPerHistoricalRoot
+	completeTargetBlockRootsGroupSlot := FIRST_CAPELLA_SLOT + (targetBlockRootsGroupSummaryIndex+1)*beacon.SlotsPerHistoricalRoot
 
-	return historicalSummarySlot, nil
+	return targetBlockRootsGroupSummaryIndex, withdrawalBlockRootIndexInGroup, completeTargetBlockRootsGroupSlot, nil
 }
 
 func (epp *EigenPodProofs) ProveWithdrawals(
