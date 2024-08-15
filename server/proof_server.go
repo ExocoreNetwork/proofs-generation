@@ -17,6 +17,8 @@ import (
 )
 
 type ProofServer struct {
+	UnimplementedProofServiceServer
+
 	chainId             uint64
 	blockHeaderProvider eth2client.BeaconBlockHeadersProvider
 	stateProvider       eth2client.BeaconStateProvider
