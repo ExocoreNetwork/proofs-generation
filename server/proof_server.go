@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"strconv"
+	"time"
 
 	eigenpodproofs "github.com/Layr-Labs/eigenpod-proofs-generation"
 	"github.com/Layr-Labs/eigenpod-proofs-generation/beacon"
@@ -19,46 +20,58 @@ import (
 type ProofServer struct {
 	UnimplementedProofServiceServer
 
-	chainId             uint64
+	chainId  uint64
+	provider string
+}
+
+type BeaconClient struct {
 	blockHeaderProvider eth2client.BeaconBlockHeadersProvider
 	stateProvider       eth2client.BeaconStateProvider
 	blockProvider       eth2client.SignedBeaconBlockProvider
 }
 
-func NewProofServer(chainId uint64, provider string) (server *ProofServer) {
+func NewBeaconClient(provider string) (*BeaconClient, context.CancelFunc, error) {
+	var beaconClient BeaconClient
+
 	// Provide a cancellable context to the creation function.
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	client, err := http.New(ctx,
 		// WithAddress supplies the address of the beacon node, as a URL.
 		http.WithAddress(provider),
 		// LogLevel supplies the level of logging to carry out.
 		http.WithLogLevel(zerolog.WarnLevel),
+		http.WithTimeout(15*time.Minute),
 	)
 	if err != nil {
-		panic(err)
+		return nil, cancel, err
 	}
 
 	if provider, isProvider := client.(eth2client.BeaconBlockHeadersProvider); isProvider {
-		server.blockHeaderProvider = provider
+		beaconClient.blockHeaderProvider = provider
 	} else {
-		panic("not a beacon block header provider")
+		return nil, cancel, err
 	}
 
 	if provider, isProvider := client.(eth2client.BeaconStateProvider); isProvider {
-		server.stateProvider = provider
+		beaconClient.stateProvider = provider
 	} else {
-		panic("not a beacon state provider")
+		return nil, cancel, err
 	}
 
 	if provider, isProvider := client.(eth2client.SignedBeaconBlockProvider); isProvider {
-		server.blockProvider = provider
+		beaconClient.blockProvider = provider
 	} else {
-		panic("not a beacon block provider")
+		return nil, cancel, err
 	}
 
-	server.chainId = chainId
+	return &beaconClient, cancel, nil
+}
 
-	return server
+func NewProofServer(chainId uint64, provider string) *ProofServer {
+	var server ProofServer
+	server.chainId = chainId
+	server.provider = provider
+	return &server
 }
 
 func (s *ProofServer) GetValidatorProof(ctx context.Context, req *ValidatorProofRequest) (*ValidatorProofResponse, error) {
@@ -67,13 +80,20 @@ func (s *ProofServer) GetValidatorProof(ctx context.Context, req *ValidatorProof
 	var beaconBlockHeader *phase0.BeaconBlockHeader
 	var versionedState *spec.VersionedBeaconState
 
-	blockHeaderResponse, err := s.blockHeaderProvider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(req.Slot, 10)})
+	beaconClient, cancel, err := NewBeaconClient(s.provider)
+	defer cancel()
+
+	if err != nil {
+		return nil, err
+	}
+
+	blockHeaderResponse, err := beaconClient.blockHeaderProvider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(req.Slot, 10)})
 	if err != nil {
 		return nil, err
 	}
 	beaconBlockHeader = blockHeaderResponse.Data.Header.Message
 
-	beaconStateResponse, err := s.stateProvider.BeaconState(ctx, &api.BeaconStateOpts{State: strconv.FormatUint(req.Slot, 10)})
+	beaconStateResponse, err := beaconClient.stateProvider.BeaconState(ctx, &api.BeaconStateOpts{State: strconv.FormatUint(req.Slot, 10)})
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +113,7 @@ func (s *ProofServer) GetValidatorProof(ctx context.Context, req *ValidatorProof
 
 	return &ValidatorProofResponse{
 		StateRoot:               beaconBlockHeader.StateRoot[:],
-		StateRootProof:          stateRootProof.SlotRootProof.ToBytesSlice(),
+		StateRootProof:          stateRootProof.StateRootProof.ToBytesSlice(),
 		ValidatorContainer:      commonutils.GetValidatorFields(versionedState.Deneb.Validators[req.ValidatorIndex]),
 		ValidatorContainerProof: validatorContainerProof.ToBytesSlice(),
 	}, nil
@@ -110,6 +130,12 @@ func (s *ProofServer) GetWithdrawalProof(ctx context.Context, req *WithdrawalPro
 	var historicalSummaryBlockRoot []byte
 	var withdrawalIndex uint64
 
+	beaconClient, cancel, err := NewBeaconClient(s.provider)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+
 	epp, err := eigenpodproofs.NewEigenPodProofs(s.chainId, 1000)
 	if err != nil {
 		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error creating EPP object", err)
@@ -122,25 +148,25 @@ func (s *ProofServer) GetWithdrawalProof(ctx context.Context, req *WithdrawalPro
 		return nil, err
 	}
 
-	blockHeaderResponse, err := s.blockHeaderProvider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(req.StateSlot, 10)})
+	blockHeaderResponse, err := beaconClient.blockHeaderProvider.BeaconBlockHeader(ctx, &api.BeaconBlockHeaderOpts{Block: strconv.FormatUint(req.StateSlot, 10)})
 	if err != nil {
 		return nil, err
 	}
 	oracleBlockHeader = blockHeaderResponse.Data.Header.Message
 
-	beaconStateResponse, err := s.stateProvider.BeaconState(ctx, &api.BeaconStateOpts{State: strconv.FormatUint(req.StateSlot, 10)})
+	beaconStateResponse, err := beaconClient.stateProvider.BeaconState(ctx, &api.BeaconStateOpts{State: strconv.FormatUint(req.StateSlot, 10)})
 	if err != nil {
 		return nil, err
 	}
 	oracleState = beaconStateResponse.Data
 
-	blockResponse, err := s.blockProvider.SignedBeaconBlock(ctx, &api.SignedBeaconBlockOpts{Block: strconv.FormatUint(req.WithdrawalSlot, 10)})
+	blockResponse, err := beaconClient.blockProvider.SignedBeaconBlock(ctx, &api.SignedBeaconBlockOpts{Block: strconv.FormatUint(req.WithdrawalSlot, 10)})
 	if err != nil {
 		return nil, err
 	}
 	withdrawalBlock = blockResponse.Data
 
-	beaconStateResponse, err = s.stateProvider.BeaconState(ctx, &api.BeaconStateOpts{State: strconv.FormatUint(completeTargetBlockRootsGroupSlot, 10)})
+	beaconStateResponse, err = beaconClient.stateProvider.BeaconState(ctx, &api.BeaconStateOpts{State: strconv.FormatUint(completeTargetBlockRootsGroupSlot, 10)})
 	if err != nil {
 		return nil, err
 	}

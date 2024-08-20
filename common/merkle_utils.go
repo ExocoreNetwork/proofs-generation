@@ -72,9 +72,10 @@ func (p Proof) ToByteSlice() []byte {
 }
 
 func (p Proof) ToBytesSlice() [][]byte {
-	byteSlice := make([][]byte, 0)
-	for _, d := range p {
-		byteSlice = append(byteSlice, d[:])
+	byteSlice := make([][]byte, len(p))
+	for i, d := range p {
+		byteSlice[i] = make([]byte, 32)
+		copy(byteSlice[i], d[:])
 	}
 	return byteSlice
 }
