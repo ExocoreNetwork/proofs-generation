@@ -50,31 +50,44 @@ func GenerateWithdrawalFieldsProof(
 		return err
 	}
 
+	fmt.Println("start parsing state")
 	stateJSON, err := commonutils.ParseDenebStateJSONFile(stateFile)
 	if err != nil {
 		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with JSON parsing state file", err)
 		return err
 	}
-	commonutils.ParseDenebBeaconStateFromJSON(*stateJSON, &state)
+	err = commonutils.ParseDenebBeaconStateFromJSON(*stateJSON, &state)
+	if err != nil {
+		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with ParseDenebBeaconStateFromJSON", err)
+		return err
+	}
 
+	fmt.Println("end parsing state")
 	historicalSummaryJSON, err := commonutils.ParseDenebStateJSONFile(historicalSummaryStateFile)
 	if err != nil {
 		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with JSON parsing historical summary state file", err)
 		return err
 	}
-	commonutils.ParseDenebBeaconStateFromJSON(*historicalSummaryJSON, &historicalSummaryState)
+	err = commonutils.ParseDenebBeaconStateFromJSON(*historicalSummaryJSON, &historicalSummaryState)
+	if err != nil {
+		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with ParseDenebBeaconStateFromJSON", err)
+		return err
+	}
 
+	fmt.Println("start parsing block header")
 	withdrawalBlockHeader, err = commonutils.ExtractBlockHeader(blockHeaderFile)
 	if err != nil {
 		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with parsing header file", err)
 		return err
 	}
 
+	fmt.Println("start parsing block")
 	withdrawalBlock, err = commonutils.ExtractBlock(blockBodyFile)
 	if err != nil {
 		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with parsing body file", err)
 		return err
 	}
+	fmt.Println("end parsing block")
 
 	hh := ssz.NewHasher()
 

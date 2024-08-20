@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	beacon "github.com/Layr-Labs/eigenpod-proofs-generation/beacon"
+	"github.com/Layr-Labs/eigenpod-proofs-generation/common"
 	ssz "github.com/ferranbt/fastssz"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -156,6 +157,10 @@ func ConvertBytesToStrings(b interface{}) []string {
 			s = append(s, "0x"+hex.EncodeToString(bytes))
 		}
 	case [][32]byte:
+		for _, bytes := range v {
+			s = append(s, "0x"+hex.EncodeToString(bytes[:]))
+		}
+	case common.Proof:
 		for _, bytes := range v {
 			s = append(s, "0x"+hex.EncodeToString(bytes[:]))
 		}
