@@ -12,10 +12,10 @@ message ValidatorProofRequest {
 }
 
 message ValidatorProofResponse {
-    bytes state_root = 1;
-    repeated bytes state_root_proof = 2;
+    string state_root = 1;
+    repeated string state_root_proof = 2;
     repeated string validator_container = 3;
-    repeated bytes validator_container_proof = 4;
+    repeated string validator_container_proof = 4;
 }
 
 message WithdrawalProofRequest {
@@ -25,20 +25,20 @@ message WithdrawalProofRequest {
 }
 
 message WithdrawalProofResponse {
-    bytes state_root = 1;
-    repeated bytes state_root_proof = 2;
+    string state_root = 1;
+    repeated string state_root_proof = 2;
     repeated string validator_container = 3;
-    repeated bytes validator_container_proof = 4;
-    bytes historical_summary_block_root = 5;
-    repeated bytes historical_summary_block_root_proof = 6;
-    bytes slot_root = 7;
-    repeated bytes slot_root_proof = 8;
-    bytes timestamp_root = 9;
-    repeated bytes timestamp_root_proof = 10;
-    bytes execution_payload_root = 11;
-    repeated bytes execution_payload_root_proof = 12;
-    repeated bytes withdrawal_container = 13;
-    repeated bytes withdrawal_container_proof = 14;
+    repeated string validator_container_proof = 4;
+    string historical_summary_block_root = 5;
+    repeated string historical_summary_block_root_proof = 6;
+    string slot_root = 7;
+    repeated string slot_root_proof = 8;
+    string timestamp_root = 9;
+    repeated string timestamp_root_proof = 10;
+    string execution_payload_root = 11;
+    repeated string execution_payload_root_proof = 12;
+    repeated string withdrawal_container = 13;
+    repeated string withdrawal_container_proof = 14;
     uint64 historical_summary_index = 15;
     uint64 block_root_index = 16;
     uint64 withdrawal_index_within_block = 17;

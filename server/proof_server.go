@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"strconv"
 	"time"
 
@@ -112,10 +113,10 @@ func (s *ProofServer) GetValidatorProof(ctx context.Context, req *ValidatorProof
 	}
 
 	return &ValidatorProofResponse{
-		StateRoot:               beaconBlockHeader.StateRoot[:],
-		StateRootProof:          stateRootProof.StateRootProof.ToBytesSlice(),
-		ValidatorContainer:      commonutils.GetValidatorFields(versionedState.Deneb.Validators[req.ValidatorIndex]),
-		ValidatorContainerProof: validatorContainerProof.ToBytesSlice(),
+		StateRoot:               "0x" + hex.EncodeToString(beaconBlockHeader.StateRoot[:]),
+		StateRootProof:          commonutils.ConvertBytesToStrings(stateRootProof.StateRootProof.ToBytesSlice()),
+		ValidatorContainer:      commonutils.ConvertBytesToStrings(commonutils.GetValidatorFields(versionedState.Deneb.Validators[req.ValidatorIndex])),
+		ValidatorContainerProof: commonutils.ConvertBytesToStrings(validatorContainerProof.ToBytesSlice()),
 	}, nil
 }
 
@@ -222,20 +223,20 @@ func (s *ProofServer) GetWithdrawalProof(ctx context.Context, req *WithdrawalPro
 	withdrawalIndex = withdrawalContainerProof.WithdrawalIndex
 
 	return &WithdrawalProofResponse{
-		StateRoot:                       oracleBlockHeader.StateRoot[:],
-		StateRootProof:                  stateRootProofAgainstBlockHeader.ToBytesSlice(),
+		StateRoot:                       "0x" + hex.EncodeToString(oracleBlockHeader.StateRoot[:]),
+		StateRootProof:                  commonutils.ConvertBytesToStrings(stateRootProofAgainstBlockHeader.ToBytesSlice()),
 		ValidatorContainer:              commonutils.GetValidatorFields(validators[req.ValidatorIndex]),
-		ValidatorContainerProof:         validatorContainerProof.ToBytesSlice(),
-		HistoricalSummaryBlockRoot:      historicalSummaryBlockRoot,
-		HistoricalSummaryBlockRootProof: withdrawalContainerProof.HistoricalSummaryBlockRootProof.ToBytesSlice(),
-		SlotRoot:                        withdrawalContainerProof.SlotRoot[:],
-		SlotRootProof:                   slotProofAgainstBlockHeader.ToBytesSlice(),
-		TimestampRoot:                   withdrawalContainerProof.TimestampRoot[:],
-		TimestampRootProof:              withdrawalContainerProof.TimestampProof.ToBytesSlice(),
-		ExecutionPayloadRoot:            withdrawalContainerProof.ExecutionPayloadRoot[:],
-		ExecutionPayloadRootProof:       withdrawalContainerProof.ExecutionPayloadProof.ToBytesSlice(),
-		WithdrawalContainer:             withdrawalContainerBytes,
-		WithdrawalContainerProof:        withdrawalContainerProof.WithdrawalProof.ToBytesSlice(),
+		ValidatorContainerProof:         commonutils.ConvertBytesToStrings(validatorContainerProof.ToBytesSlice()),
+		HistoricalSummaryBlockRoot:      "0x" + hex.EncodeToString(historicalSummaryBlockRoot),
+		HistoricalSummaryBlockRootProof: commonutils.ConvertBytesToStrings(withdrawalContainerProof.HistoricalSummaryBlockRootProof.ToBytesSlice()),
+		SlotRoot:                        "0x" + hex.EncodeToString(withdrawalContainerProof.SlotRoot[:]),
+		SlotRootProof:                   commonutils.ConvertBytesToStrings(slotProofAgainstBlockHeader.ToBytesSlice()),
+		TimestampRoot:                   "0x" + hex.EncodeToString(withdrawalContainerProof.TimestampRoot[:]),
+		TimestampRootProof:              commonutils.ConvertBytesToStrings(withdrawalContainerProof.TimestampProof.ToBytesSlice()),
+		ExecutionPayloadRoot:            "0x" + hex.EncodeToString(withdrawalContainerProof.ExecutionPayloadRoot[:]),
+		ExecutionPayloadRootProof:       commonutils.ConvertBytesToStrings(withdrawalContainerProof.ExecutionPayloadProof.ToBytesSlice()),
+		WithdrawalContainer:             commonutils.ConvertBytesToStrings(withdrawalContainerBytes),
+		WithdrawalContainerProof:        commonutils.ConvertBytesToStrings(withdrawalContainerProof.WithdrawalProof.ToBytesSlice()),
 		HistoricalSummaryIndex:          targetBlockRootsGroupSummaryIndex,
 		BlockRootIndex:                  withdrawalBlockRootIndexInGroup,
 		WithdrawalIndexWithinBlock:      withdrawalIndex,
