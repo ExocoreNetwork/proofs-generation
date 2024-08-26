@@ -115,7 +115,7 @@ func (s *ProofServer) GetValidatorProof(ctx context.Context, req *ValidatorProof
 	return &ValidatorProofResponse{
 		StateRoot:               "0x" + hex.EncodeToString(beaconBlockHeader.StateRoot[:]),
 		StateRootProof:          commonutils.ConvertBytesToStrings(stateRootProof.StateRootProof.ToBytesSlice()),
-		ValidatorContainer:      commonutils.ConvertBytesToStrings(commonutils.GetValidatorFields(versionedState.Deneb.Validators[req.ValidatorIndex])),
+		ValidatorContainer:      commonutils.GetValidatorFields(versionedState.Deneb.Validators[req.ValidatorIndex]),
 		ValidatorContainerProof: commonutils.ConvertBytesToStrings(validatorContainerProof.ToBytesSlice()),
 	}, nil
 }
