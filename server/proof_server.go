@@ -185,9 +185,10 @@ func (s *ProofServer) GetWithdrawalProof(ctx context.Context, req *WithdrawalPro
 		return nil, err
 	}
 
-	var withdrawalContainerBytes [][]byte
-	for _, withdrawal := range withdrawalContainer {
-		withdrawalContainerBytes = append(withdrawalContainerBytes, withdrawal[:])
+	withdrawalContainerBytes := make([][]byte, len(withdrawalContainer))
+	for i, withdrawal := range withdrawalContainer {
+		withdrawalContainerBytes[i] = make([]byte, 32)
+		copy(withdrawalContainerBytes[i], withdrawal[:])
 	}
 
 	stateRootProofAgainstBlockHeader, err := beacon.ProveStateRootAgainstBlockHeader(oracleBlockHeader)
