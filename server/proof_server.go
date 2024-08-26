@@ -196,12 +196,6 @@ func (s *ProofServer) GetWithdrawalProof(ctx context.Context, req *WithdrawalPro
 		return nil, err
 	}
 
-	slotProofAgainstBlockHeader, err := beacon.ProveSlotAgainstBlockHeader(oracleBlockHeader)
-	if err != nil {
-		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with ProveSlotAgainstBlockHeader", err)
-		return nil, err
-	}
-
 	validators, err := oracleState.Validators()
 	if err != nil {
 		log.Debug().AnErr("GenerateWithdrawalFieldsProof: error with get validators", err)
@@ -230,7 +224,7 @@ func (s *ProofServer) GetWithdrawalProof(ctx context.Context, req *WithdrawalPro
 		HistoricalSummaryBlockRoot:      "0x" + hex.EncodeToString(historicalSummaryBlockRoot),
 		HistoricalSummaryBlockRootProof: commonutils.ConvertBytesToStrings(withdrawalContainerProof.HistoricalSummaryBlockRootProof.ToBytesSlice()),
 		SlotRoot:                        "0x" + hex.EncodeToString(withdrawalContainerProof.SlotRoot[:]),
-		SlotRootProof:                   commonutils.ConvertBytesToStrings(slotProofAgainstBlockHeader.ToBytesSlice()),
+		SlotRootProof:                   commonutils.ConvertBytesToStrings(withdrawalContainerProof.SlotProof.ToBytesSlice()),
 		TimestampRoot:                   "0x" + hex.EncodeToString(withdrawalContainerProof.TimestampRoot[:]),
 		TimestampRootProof:              commonutils.ConvertBytesToStrings(withdrawalContainerProof.TimestampProof.ToBytesSlice()),
 		ExecutionPayloadRoot:            "0x" + hex.EncodeToString(withdrawalContainerProof.ExecutionPayloadRoot[:]),
