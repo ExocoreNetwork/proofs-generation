@@ -1,0 +1,7 @@
+# Chain configuration
+chain_id: 17000
+provider: "http://localhost:3500"
+
+# Server ports
+grpc_port: "50051"
+json_rpc_port: "8989"

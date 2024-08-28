@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	beacon "github.com/Layr-Labs/eigenpod-proofs-generation/beacon"
+	"github.com/Layr-Labs/eigenpod-proofs-generation/common"
 	ssz "github.com/ferranbt/fastssz"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -148,10 +149,23 @@ type InputDataBlock struct {
 	Finalized            bool `json:"finalized"`
 }
 
-func ConvertBytesToStrings(b [][32]byte) []string {
+func ConvertBytesToStrings(b interface{}) []string {
 	var s []string
-	for _, v := range b {
-		s = append(s, "0x"+hex.EncodeToString(v[:]))
+	switch v := b.(type) {
+	case [][]byte:
+		for _, bytes := range v {
+			s = append(s, "0x"+hex.EncodeToString(bytes))
+		}
+	case [][32]byte:
+		for _, bytes := range v {
+			s = append(s, "0x"+hex.EncodeToString(bytes[:]))
+		}
+	case common.Proof:
+		for _, bytes := range v {
+			s = append(s, "0x"+hex.EncodeToString(bytes[:]))
+		}
+	default:
+		panic(fmt.Sprintf("unsupported type: %T", b))
 	}
 	return s
 }
