@@ -53,6 +53,8 @@ func startGRPCServer(config Config) {
 	if err != nil {
 		panic(err)
 	}
+	defer lis.Close()
+
 	s := grpc.NewServer()
 	proofServer := NewProofServer(config.ChainID, config.Provider)
 	RegisterProofServiceServer(s, proofServer)
